@@ -2,12 +2,7 @@ import type { Register } from 'claude-code'
 
 /**
  * Restyles the person's own transcript rows (`> ...`) so they stand out in
- * dark themes.
- *
- * Expanded rows draw the message body inside a colored rounded border; the
- * collapsed one-line form (the sticky row fullscreen pins at the top while
- * scrolling) draws as a single line in the theme's primary color instead of
- * the engine's dim grey.
+ * dark themes: the message body drawn inside a colored rounded border.
  *
  * Only rows the person truly typed (`origin.kind === 'composer'`, plus
  * `bridge` — a phone/web client) are highlighted; notifications and other
@@ -27,14 +22,6 @@ export const register: Register = (on, options) => {
     }
 
     const { Box, Text } = $.ui.resolve(e)
-
-    if (!e.props.isExpanded) {
-      return (
-        <Text color={color} wrap="truncate">
-          {`> ${e.props.text}`}
-        </Text>
-      )
-    }
 
     return (
       <Box borderStyle="round" borderColor={color} marginTop={1} paddingX={1}>

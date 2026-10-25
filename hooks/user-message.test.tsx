@@ -63,7 +63,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
       })
     }
 
-    test(`draws the collapsed sticky form as one colored line`, async ($) => {
+    test(`draws the same border for the collapsed main-screen form`, async ($) => {
       const ui = await $.ui.mount({
         plugin: 'user-message-style',
         surface,
@@ -76,8 +76,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
       })
 
       const drawn = await ui.drawn()
-      expect(drawn).toMatchObject({ type: 'Text' })
-      expect(drawn).not.toMatchObject({ type: 'Box' })
+      expect(drawn).toMatchObject({ type: 'Box', borderStyle: 'round' })
     })
   })
 }
