@@ -10,6 +10,8 @@ declare module 'claude-code' {
       picked: string
       /** How many times the pane's refresh button was pressed. */
       pressed: number
+      /** How many times the status pane's refresh button was pressed. */
+      refreshes: number
     }
   }
 }

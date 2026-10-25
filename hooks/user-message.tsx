@@ -14,14 +14,25 @@ import type { Register } from 'claude-code'
  * final echo row (`> /cmd args`) and the fullscreen sticky row are drawn by
  * the engine itself, never raised through ui.render — no hook sees them.
  *
- * `/ustyle` opens a demo Pane (docked beside the transcript in fullscreen
- * from 110 columns): theme-color swatches, a press counter, hints.
+ * `/ustyle` opens a status Pane (docked beside the transcript in fullscreen
+ * from 110 columns): session info, context usage with a bar, and the
+ * skills / MCP tools / agents the context carries, each with its tokens.
  */
 
 type ThemeColor = 'claude' | 'warning' | 'success' | 'error' | 'permission'
 
-const picked = atom({ plugin: 'user-message-style', key: 'picked' } as const, 'claude')
-const pressed = atom({ plugin: 'user-message-style', key: 'pressed' } as const, 0)
+const refreshes = atom({ plugin: 'user-message-style', key: 'refreshes' } as const, 0)
+
+const fmtTokens = (n: number | undefined): string => {
+  if (n === undefined) return '—'
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+}
+
+const bar = (percent: number | undefined, width: number): string => {
+  if (percent === undefined) return ' '.repeat(width)
+  const filled = Math.max(0, Math.min(width, Math.round((percent / 100) * width)))
+  return '█'.repeat(filled) + '░'.repeat(width - filled)
+}
 
 export const register: Register = (on, options) => {
   const color = (options.color as ThemeColor | undefined) ?? 'claude'
@@ -40,35 +51,103 @@ export const register: Register = (on, options) => {
     )
   })
 
-  // The demo pane: opened by /ustyle, drawn for id "ustyle".
+  // The status pane: opened by /ustyle, drawn for id "ustyle".
   on('ui.render', { component: 'Pane', requestId: 'ustyle' }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
-    const current = await read($, picked)
-    const count = await read($, pressed)
-    const colors: ThemeColor[] = ['claude', 'warning', 'success', 'error', 'permission']
+    const columns = Math.max(20, e.props.bodyColumns - 2)
+
+    const [usage, model, version, turns, cwd] = await Promise.all([
+      $.session.usage({ breakdown: 'full' }),
+      $.session.model(),
+      $.session.version(),
+      $.session.turns(),
+      $.session.cwd(),
+    ])
+
+    const started = new Date(usage.startedAt)
+    const hh = String(started.getHours()).padStart(2, '0')
+    const mm = String(started.getMinutes()).padStart(2, '0')
+
+    const bd = usage.context.breakdown
+    const skills = bd?.skills
+    const mcpByServer = new Map<string, { count: number; tokens: number }>()
+    for (const t of bd?.mcpTools ?? []) {
+      const row = mcpByServer.get(t.serverName) ?? { count: 0, tokens: 0 }
+      row.count += 1
+      row.tokens += t.tokens
+      mcpByServer.set(t.serverName, row)
+    }
+    const agents = bd?.agents ?? []
 
     return (
       <Box flexDirection="column" rowGap={1} paddingX={1}>
-        <Text bold color="claude">user-message-style</Text>
-
-        <Box flexDirection="column" rowGap={0}>
-          <Text dimColor>Pick a swatch (pane demo only; the transcript border reads /config):</Text>
-          <Box flexDirection="row" columnGap={1}>
-            {colors.map((c, i) => (
-              <Button key={`c-${c}`} label={c} hotkey={String(i + 1)} onPress={() => update($, picked, () => c)}>
-                {current === c ? <Text color={c} bold>{`● ${c}`}</Text> : <Text color={c}>{`○ ${c}`}</Text>}
-              </Button>
-            ))}
-          </Box>
+        <Box flexDirection="row" justifyContent="space-between">
+          <Text bold color="claude">session status</Text>
+          <Text dimColor>{`refreshed ${await read($, refreshes)}x`}</Text>
         </Box>
-
-        <Button key="tick" label="refresh" onPress={() => update($, pressed, (n) => n + 1)}>
-          <Text dimColor>{`⟳ pressed ${count}x`}</Text>
-        </Button>
 
         <Box flexDirection="column">
-          <Text dimColor>1-5 pick a swatch · ctrl+x tab focus · Esc close</Text>
+          <Text>{`model    ${model}`}</Text>
+          <Text>{`engine   v${version.version}`}</Text>
+          <Text>{`cwd      ${cwd.replace(/^C:\\/i, 'C:/')}`}</Text>
+          <Text>{`started  ${hh}:${mm} · ${turns} prompts`}</Text>
+          <Text>{`cost     ${usage.cost ? `$${usage.cost.usd.toFixed(4)}` : '—'}`}</Text>
         </Box>
+
+        <Box flexDirection="column">
+          <Text dimColor>context</Text>
+          <Text>
+            {bar(usage.context.percent, Math.min(30, columns - 14))}
+            {` ${usage.context.percent ?? '—'}% of ${(usage.context.window / 1000).toFixed(0)}k`}
+          </Text>
+          {bd ? (
+            <Box flexDirection="column">
+              {bd.categories.slice(0, 6).map((c) => (
+                <Text key={`cat-${c.name}`} dimColor>
+                  {`  ${c.name.slice(0, 12).padEnd(12, ' ')} ${fmtTokens(c.tokens)}`}
+                </Text>
+              ))}
+              <Text dimColor>{`  ${'window'.padEnd(12, ' ')} ${fmtTokens(bd.maxTokens)}`}</Text>
+            </Box>
+          ) : null}
+        </Box>
+
+        <Box flexDirection="column">
+          <Text dimColor>
+            skills {skills ? `${skills.includedSkills}/${skills.totalSkills} · ${fmtTokens(skills.tokens)} tok` : '—'}
+          </Text>
+          {(skills?.skillFrontmatter ?? []).slice(0, 12).map((s) => (
+            <Text key={`s-${s.name}`}>
+              {`  ${s.name.padEnd(24, ' ')}`}
+              <Text dimColor>{` ${fmtTokens(s.tokens)} · ${s.source}`}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Box flexDirection="column">
+          <Text dimColor>mcp servers</Text>
+          {mcpByServer.size === 0 ? <Text dimColor>  none connected</Text> : null}
+          {[...mcpByServer.entries()].map(([server, row]) => (
+            <Text key={`m-${server}`}>
+              {`  ${server.padEnd(24, ' ')}`}
+              <Text dimColor>{` ${row.count} tools · ${fmtTokens(row.tokens)} tok`}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Box flexDirection="column">
+          <Text dimColor>{`custom agents ${agents.length}`}</Text>
+          {agents.slice(0, 8).map((a) => (
+            <Text key={`a-${a.agentType}`}>
+              {`  ${a.agentType.padEnd(24, ' ')}`}
+              <Text dimColor>{` ${fmtTokens(a.tokens)} · ${a.source}`}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Button key="refresh" label="refresh" onPress={() => update($, refreshes, (n) => n + 1)}>
+          <Text color="claude">⟳ refresh (r)</Text>
+        </Button>
       </Box>
     )
   })
@@ -76,12 +155,12 @@ export const register: Register = (on, options) => {
   on('session.start', async ($) => {
     await $.command.register({
       name: 'ustyle',
-      description: 'Open the user-message-style demo pane',
+      description: 'Open the session status pane',
     })
   })
 
-  on('command.run', { command: 'ustyle' }, async ($, e, next) => {
-    await $.ui.open({ id: 'ustyle', title: 'user-message-style', focus: true, rows: 12 })
-    return { text: 'Pane opened (docked beside the transcript while it fits).' }
+  on('command.run', { command: 'ustyle' }, async ($, _e, next) => {
+    await $.ui.open({ id: 'ustyle', title: 'session status', focus: true, rows: 24 })
+    return { text: 'Status pane opened.' }
   })
 }
