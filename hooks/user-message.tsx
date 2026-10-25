@@ -79,10 +79,17 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" rowGap={1} paddingX={1}>
         <Box flexDirection="row" justifyContent="space-between">
           <Text bold color="claude">session status</Text>
-          <Box key="refresh-wrap">
-            <Button key="refresh" label="refresh" plain hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
-              <Text dimColor> ⟳ refresh </Text>
-            </Button>
+          <Box flexDirection="row" columnGap={2}>
+            <Box key="refresh-wrap">
+              <Button key="refresh" label="refresh" plain hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
+                <Text dimColor> ⟳ refresh </Text>
+              </Button>
+            </Box>
+            <Box key="close-wrap">
+              <Button key="close" label="close" plain hover={{ color: 'error' }} onPress={() => $.ui.close({ id: 'ustyle' })}>
+                <Text dimColor> ✕ close </Text>
+              </Button>
+            </Box>
           </Box>
         </Box>
 
