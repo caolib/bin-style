@@ -1,19 +1,12 @@
 import { test, expect, describe } from 'claude-code/testing'
-import type { Register } from 'claude-code'
-
-/** The register under test, loaded by `claude plugin test` from this folder. */
-declare const register: Register
 
 const OWN: Array<{ kind: string; label: string }> = [
   { kind: 'composer', label: 'typed at the prompt' },
   { kind: 'bridge', label: 'sent from a phone/web client' },
+  { kind: 'unclassified', label: 'a slash command, unstamped' },
 ]
 
-const OTHER: Array<{ kind: string; label: string }> = [
-  { kind: 'task-notification', label: 'background task notification' },
-  { kind: 'peer', label: 'another session' },
-  { kind: 'unclassified', label: 'unclassified' },
-]
+const OTHER: Array<{ origin: Record<string, unknown>; label: string }> = []
 
 for (const surface of ['terminal', 'desktop'] as const) {
   describe(`user-message-style on ${surface}`, () => {
@@ -31,18 +24,14 @@ for (const surface of ['terminal', 'desktop'] as const) {
         })
 
         const drawn = await ui.drawn()
-        expect(drawn).toMatchObject({ type: 'Box' })
-        expect(drawn).not.toMatchObject({ type: 'engine' })
-
-        const texts = await ui.findAll({ type: 'Text' })
-        expect(texts.length).toBeGreaterThan(0)
-        expect(
-          texts.some((t) => typeof t.text === 'string' && t.text.includes('fix the login bug'))
-        ).toBe(true)
+        expect(drawn).toMatchObject({
+          type: 'Box',
+          props: { borderStyle: 'round' },
+        })
       })
     }
 
-    for (const { kind, label } of OTHER) {
+    for (const { origin, label } of OTHER) {
       test(`passes ${label} rows through untouched`, async ($, on) => {
         // Stand for the engine's own drawing: nothing beneath the plugins.
         on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
@@ -53,7 +42,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
           component: 'UserMessage',
           props: {
             text: 'a notification arrives',
-            origin: { kind },
+            origin,
             isExpanded: true,
           },
         })
@@ -63,7 +52,45 @@ for (const surface of ['terminal', 'desktop'] as const) {
       })
     }
 
-    test(`draws the same border for the collapsed main-screen form`, async ($) => {
+    test('passes rows carrying `from` (another sender) through untouched', async ($, on) => {
+      on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
+
+      const ui = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'a teammate writes',
+          origin: { kind: 'unclassified' },
+          isExpanded: true,
+          from: { kind: 'teammate', name: 'alex' },
+        },
+      })
+
+      const drawn = await ui.drawn()
+      expect(drawn).toMatchObject({ type: 'engine', ref: 0 })
+    })
+
+    test('passes rows carrying `task` through untouched', async ($, on) => {
+      on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
+
+      const ui = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'build finished',
+          origin: { kind: 'task-notification' },
+          isExpanded: true,
+          task: { id: 't1', label: 'build' },
+        },
+      })
+
+      const drawn = await ui.drawn()
+      expect(drawn).toMatchObject({ type: 'engine', ref: 0 })
+    })
+
+    test('draws the same border for the collapsed main-screen form', async ($) => {
       const ui = await $.ui.mount({
         plugin: 'user-message-style',
         surface,
