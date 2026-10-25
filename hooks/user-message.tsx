@@ -22,6 +22,8 @@ import type { Register } from 'claude-code'
 type ThemeColor = 'claude' | 'warning' | 'success' | 'error' | 'permission'
 
 const refreshes = atom({ plugin: 'user-message-style', key: 'refreshes' } as const, 0)
+const skillPage = atom({ plugin: 'user-message-style', key: 'skillPage' } as const, 0)
+const SKILL_PAGE_SIZE = 10
 
 const fmtTokens = (n: number | undefined): string => {
   if (n === undefined) return '—'
@@ -68,6 +70,7 @@ export const register: Register = (on, options) => {
       mcpByServer.set(t.serverName, row)
     }
     const agents = bd?.agents ?? []
+    const pageIndex = Math.max(0, (await read($, skillPage)) as number) * SKILL_PAGE_SIZE
 
     return (
       <Box flexDirection="column" rowGap={1} paddingX={1}>
@@ -113,15 +116,36 @@ export const register: Register = (on, options) => {
         </Box>
 
         <Box flexDirection="column">
-          <Text dimColor>
-            skills {skills ? `${skills.includedSkills}/${skills.totalSkills} · ${fmtTokens(skills.tokens)} tok` : '—'}
-          </Text>
-          {(skills?.skillFrontmatter ?? []).map((s) => (
-            <Text key={`s-${s.name}`}>
-              {`  ${s.name.padEnd(24, ' ')}`}
-              <Text dimColor>{` ${fmtTokens(s.tokens)} · ${s.source}`}</Text>
+          <Box flexDirection="row" justifyContent="space-between">
+            <Text dimColor>
+              skills {skills ? `${skills.includedSkills}/${skills.totalSkills} · ${fmtTokens(skills.tokens)} tok` : '—'}
             </Text>
-          ))}
+            {skills && skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
+              <Box flexDirection="row" columnGap={1}>
+                <Button key="skill-prev" label="prev" onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
+                  <Text color="claude">‹ prev</Text>
+                </Button>
+                <Button key="skill-next" label="next" onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
+                  <Text color="claude">next ›</Text>
+                </Button>
+              </Box>
+            ) : null}
+          </Box>
+          {skills ? (
+            <Box flexDirection="column">
+              {skills.skillFrontmatter
+                .slice(pageIndex, pageIndex + SKILL_PAGE_SIZE)
+                .map((s) => (
+                  <Text key={`s-${s.name}`}>
+                    {`  ${s.name.padEnd(24, ' ')}`}
+                    <Text dimColor>{` ${fmtTokens(s.tokens)} · ${s.source}`}</Text>
+                  </Text>
+                ))}
+              {skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
+                <Text dimColor>{`  page ${(await read($, skillPage)) + 1}/${Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE)}`}</Text>
+              ) : null}
+            </Box>
+          ) : null}
         </Box>
 
         <Button key="refresh" label="refresh" onPress={() => update($, refreshes, (n) => n + 1)}>

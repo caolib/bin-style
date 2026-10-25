@@ -12,6 +12,8 @@ declare module 'claude-code' {
       pressed: number
       /** How many times the status pane's refresh button was pressed. */
       refreshes: number
+      /** The skills list page shown in the status pane. */
+      skillPage: number
     }
   }
 }
