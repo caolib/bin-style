@@ -86,8 +86,8 @@ export const register: Register = (on, options) => {
           {bd ? (
             <Box flexDirection="column">
               {bd.categories.slice(0, 6).map((c) => (
-                <Text key={`cat-${c.name}`} dimColor>
-                  {`  ${c.name.slice(0, 12).padEnd(12, ' ')} ${fmtTokens(c.tokens)}`}
+                <Text key={`cat-${c.kind}-${c.name}`} dimColor>
+                  {`  ${c.name} ${fmtTokens(c.tokens)}${c.isDeferred ? ' ·deferred' : ''}`}
                 </Text>
               ))}
             </Box>
