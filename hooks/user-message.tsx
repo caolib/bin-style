@@ -8,6 +8,10 @@ import type { Register } from 'claude-code'
  * teammate, session or channel sent it) and no `task` (a background task's
  * notification) — slash commands arrive unstamped (`unclassified`) and so
  * stay covered.
+ *
+ * Known engine boundary (verified with a render probe): a slash command's
+ * final echo row (`> /cmd args`) and the fullscreen sticky row are drawn by
+ * the engine itself, never raised through ui.render — no hook sees them.
  */
 
 type ThemeColor = 'claude' | 'warning' | 'success' | 'error' | 'permission'
