@@ -130,12 +130,12 @@ export const register: Register = (on, options) => {
             {skills && skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
               <Box flexDirection="row" columnGap={1}>
                 <Box key="skill-prev-wrap">
-                  <Button key="skill-prev" label="prev" plain hotkey="[" hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
+                  <Button key="skill-prev" label="prev" plain hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
                     <Text dimColor> ‹ prev </Text>
                   </Button>
                 </Box>
                 <Box key="skill-next-wrap">
-                  <Button key="skill-next" label="next" plain hotkey="]" hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
+                  <Button key="skill-next" label="next" plain hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
                     <Text dimColor> next › </Text>
                   </Button>
                 </Box>

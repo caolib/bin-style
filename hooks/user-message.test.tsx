@@ -105,5 +105,35 @@ for (const surface of ['terminal', 'desktop'] as const) {
       const drawn = await ui.drawn()
       expect(drawn).toMatchObject({ type: 'Box', props: { borderStyle: 'round' } })
     })
+
+    test('draws the status pane with buttons and sections', async ($, on) => {
+      // The test engine has no session backing it; stand in the figures.
+      on('session.usage', () => ({ value: {
+        startedAt: 0,
+          context: { window: 200000 },
+          rateLimits: [],
+        } }))
+      on('session.model', () => ({ value: 'test-model' }))
+      on('session.version', () => ({ value: { version: '0.0.0-test' } }))
+      on('session.turns', () => ({ value: 0 }))
+
+      const ui = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'Pane',
+        requestId: 'ustyle',
+        props: { title: 'session status', isFocused: true, bodyColumns: 60, placement: 'dock', scroll: { bodyRows: 24, first: 0, last: 24 } },
+      })
+
+      const drawn = await ui.drawn()
+      expect(drawn).toMatchObject({ type: 'Box' })
+
+      const buttons = await ui.findAll({ type: 'Button' })
+      expect(buttons.length).toBeGreaterThanOrEqual(1)
+
+      const texts = await ui.findAll({ type: 'Text' })
+      expect(texts.some((t) => typeof t.text === 'string' && t.text.includes('context breakdown'))).toBe(true)
+      expect(texts.some((t) => typeof t.text === 'string' && t.text.includes('skills'))).toBe(true)
+    })
   })
 }
