@@ -76,7 +76,9 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" rowGap={1} paddingX={1}>
         <Box flexDirection="row" justifyContent="space-between">
           <Text bold color="claude">session status</Text>
-          <Text dimColor>{`refreshed ${await read($, refreshes)}x`}</Text>
+          <Button key="refresh" label="refresh" onPress={() => update($, refreshes, (n) => n + 1)}>
+            <Text color="claude">⟳</Text>
+          </Button>
         </Box>
 
         <Box flexDirection="column">
@@ -95,22 +97,22 @@ export const register: Register = (on, options) => {
         </Box>
 
         <Box flexDirection="column">
+          <Text dimColor>{`custom agents ${agents.length}`}</Text>
+          {agents.slice(0, 8).map((a) => (
+            <Text key={`a-${a.agentType}`}>
+              {`  ${a.agentType.padEnd(24, ' ')}`}
+              <Text dimColor>{` ${fmtTokens(a.tokens)} · ${a.source}`}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Box flexDirection="column">
           <Text dimColor>mcp servers</Text>
           {mcpByServer.size === 0 ? <Text dimColor>  none connected</Text> : null}
           {[...mcpByServer.entries()].map(([server, row]) => (
             <Text key={`m-${server}`}>
               {`  ${server.padEnd(24, ' ')}`}
               <Text dimColor>{` ${row.count} tools · ${fmtTokens(row.tokens)} tok`}</Text>
-            </Text>
-          ))}
-        </Box>
-
-        <Box flexDirection="column">
-          <Text dimColor>{`custom agents ${agents.length}`}</Text>
-          {agents.slice(0, 8).map((a) => (
-            <Text key={`a-${a.agentType}`}>
-              {`  ${a.agentType.padEnd(24, ' ')}`}
-              <Text dimColor>{` ${fmtTokens(a.tokens)} · ${a.source}`}</Text>
             </Text>
           ))}
         </Box>
@@ -147,10 +149,6 @@ export const register: Register = (on, options) => {
             </Box>
           ) : null}
         </Box>
-
-        <Button key="refresh" label="refresh" onPress={() => update($, refreshes, (n) => n + 1)}>
-          <Text color="claude">⟳ refresh (r)</Text>
-        </Button>
       </Box>
     )
   })
