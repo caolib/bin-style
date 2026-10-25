@@ -123,10 +123,10 @@ export const register: Register = (on, options) => {
             {skills && skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
               <Box flexDirection="row" columnGap={1}>
                 <Button key="skill-prev" label="prev" onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
-                  <Text color="claude">‹ prev</Text>
+                  <Text color="claude">‹</Text>
                 </Button>
                 <Button key="skill-next" label="next" onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
-                  <Text color="claude">next ›</Text>
+                  <Text color="claude">›</Text>
                 </Button>
               </Box>
             ) : null}
