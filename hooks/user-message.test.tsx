@@ -76,7 +76,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
       })
 
       const drawn = await ui.drawn()
-      expect(drawn).toMatchObject({ type: 'Box', borderStyle: 'round' })
+      expect(drawn).toMatchObject({ type: 'Box', props: { borderStyle: 'round' } })
     })
   })
 }
