@@ -77,7 +77,7 @@ export const register: Register = (on, options) => {
         <Box flexDirection="row" justifyContent="space-between">
           <Text bold color="claude">session status</Text>
           <Button key="refresh" label="refresh" onPress={() => update($, refreshes, (n) => n + 1)}>
-            <Text color="claude">⟳</Text>
+            <Text color="inverseText">⟳</Text>
           </Button>
         </Box>
 
@@ -125,10 +125,10 @@ export const register: Register = (on, options) => {
             {skills && skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
               <Box flexDirection="row" columnGap={1}>
                 <Button key="skill-prev" label="prev" onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
-                  <Text color="claude">‹</Text>
+                  <Text color="inverseText">‹</Text>
                 </Button>
                 <Button key="skill-next" label="next" onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
-                  <Text color="claude">›</Text>
+                  <Text color="inverseText">›</Text>
                 </Button>
               </Box>
             ) : null}
