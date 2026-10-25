@@ -80,7 +80,7 @@ export const register: Register = (on, options) => {
         <Box flexDirection="row" justifyContent="space-between">
           <Text bold color="claude">session status</Text>
           <Box key="refresh-wrap">
-            <Button key="refresh" label="refresh" hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
+            <Button key="refresh" label="refresh" plain hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
               <Text dimColor>⟳</Text>
             </Button>
           </Box>
@@ -130,12 +130,12 @@ export const register: Register = (on, options) => {
             {skills && skills.skillFrontmatter.length > SKILL_PAGE_SIZE ? (
               <Box flexDirection="row" columnGap={1}>
                 <Box key="skill-prev-wrap">
-                  <Button key="skill-prev" label="prev" hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
+                  <Button key="skill-prev" label="prev" plain hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.max(0, (n ?? 0) - 1))}>
                     <Text dimColor>‹</Text>
                   </Button>
                 </Box>
                 <Box key="skill-next-wrap">
-                  <Button key="skill-next" label="next" hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
+                  <Button key="skill-next" label="next" plain hover={{ color: 'claude' }} onPress={() => update($, skillPage, (n) => Math.min(Math.ceil(skills.skillFrontmatter.length / SKILL_PAGE_SIZE) - 1, (n ?? 0) + 1))}>
                     <Text dimColor>›</Text>
                   </Button>
                 </Box>
