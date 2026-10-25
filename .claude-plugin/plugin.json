@@ -1,0 +1,14 @@
+{
+  "name": "user-message-style",
+  "version": "0.1.0",
+  "description": "Highlight your own messages in the transcript with a colored rounded border so they stand out in dark themes",
+  "userConfig": {
+    "color": {
+      "type": "string",
+      "title": "边框颜色",
+      "default": "claude",
+      "options": ["claude", "warning", "success", "error", "permission"],
+      "description": "Theme color used for the border (follows your theme)"
+    }
+  }
+}
