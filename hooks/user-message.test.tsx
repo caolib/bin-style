@@ -62,5 +62,22 @@ for (const surface of ['terminal', 'desktop'] as const) {
         expect(drawn).toMatchObject({ type: 'engine', ref: 0 })
       })
     }
+
+    test(`draws the collapsed sticky form as one colored line`, async ($) => {
+      const ui = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'fix the login bug',
+          origin: { kind: 'composer' },
+          isExpanded: false,
+        },
+      })
+
+      const drawn = await ui.drawn()
+      expect(drawn).toMatchObject({ type: 'Text' })
+      expect(drawn).not.toMatchObject({ type: 'Box' })
+    })
   })
 }
