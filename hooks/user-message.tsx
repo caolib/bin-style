@@ -56,12 +56,11 @@ export const register: Register = (on, options) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const columns = Math.max(20, e.props.bodyColumns - 2)
 
-    const [usage, model, version, turns, cwd] = await Promise.all([
+    const [usage, model, version, turns] = await Promise.all([
       $.session.usage({ breakdown: 'full' }),
       $.session.model(),
       $.session.version(),
       $.session.turns(),
-      $.session.cwd(),
     ])
 
     const started = new Date(usage.startedAt)
@@ -89,17 +88,23 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column">
           <Text>{`model    ${model}`}</Text>
           <Text>{`engine   v${version.version}`}</Text>
-          <Text>{`cwd      ${cwd.replace(/^C:\\/i, 'C:/')}`}</Text>
           <Text>{`started  ${hh}:${mm} · ${turns} prompts`}</Text>
-          <Text>{`cost     ${usage.cost ? `$${usage.cost.usd.toFixed(4)}` : '—'}`}</Text>
         </Box>
 
         <Box flexDirection="column">
-          <Text dimColor>context</Text>
-          <Text>
-            {bar(usage.context.percent, Math.min(30, columns - 14))}
-            {` ${usage.context.percent ?? '—'}% of ${(usage.context.window / 1000).toFixed(0)}k`}
+          <Text dimColor>
+            skills {skills ? `${skills.includedSkills}/${skills.totalSkills} · ${fmtTokens(skills.tokens)} tok` : '—'}
           </Text>
+          {(skills?.skillFrontmatter ?? []).map((s) => (
+            <Text key={`s-${s.name}`}>
+              {`  ${s.name.padEnd(24, ' ')}`}
+              <Text dimColor>{` ${fmtTokens(s.tokens)} · ${s.source}`}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Box flexDirection="column">
+          <Text dimColor>context breakdown</Text>
           {bd ? (
             <Box flexDirection="column">
               {bd.categories.slice(0, 6).map((c) => (
@@ -107,21 +112,10 @@ export const register: Register = (on, options) => {
                   {`  ${c.name.slice(0, 12).padEnd(12, ' ')} ${fmtTokens(c.tokens)}`}
                 </Text>
               ))}
-              <Text dimColor>{`  ${'window'.padEnd(12, ' ')} ${fmtTokens(bd.maxTokens)}`}</Text>
             </Box>
-          ) : null}
-        </Box>
-
-        <Box flexDirection="column">
-          <Text dimColor>
-            skills {skills ? `${skills.includedSkills}/${skills.totalSkills} · ${fmtTokens(skills.tokens)} tok` : '—'}
-          </Text>
-          {(skills?.skillFrontmatter ?? []).slice(0, 12).map((s) => (
-            <Text key={`s-${s.name}`}>
-              {`  ${s.name.padEnd(24, ' ')}`}
-              <Text dimColor>{` ${fmtTokens(s.tokens)} · ${s.source}`}</Text>
-            </Text>
-          ))}
+          ) : (
+            <Text dimColor>  —</Text>
+          )}
         </Box>
 
         <Box flexDirection="column">
