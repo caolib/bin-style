@@ -36,6 +36,9 @@ const bar = (percent: number | undefined, width: number): string => {
   return '█'.repeat(filled) + '░'.repeat(width - filled)
 }
 
+const shortCategory = (name: string): string =>
+  name.replace(/\s*\(deferred\)\s*$/i, '').replace(/\s+icons?$/i, '')
+
 export const register: Register = (on, options) => {
   const color = (options.color as ThemeColor | undefined) ?? 'claude'
 
@@ -87,7 +90,7 @@ export const register: Register = (on, options) => {
             <Box flexDirection="column">
               {bd.categories.slice(0, 6).map((c) => (
                 <Text key={`cat-${c.kind}-${c.name}`} dimColor>
-                  {`  ${c.name} ${fmtTokens(c.tokens)}${c.isDeferred ? ' ·deferred' : ''}`}
+                  {`  ${shortCategory(c.name)} ${fmtTokens(c.tokens)}`}
                 </Text>
               ))}
             </Box>
