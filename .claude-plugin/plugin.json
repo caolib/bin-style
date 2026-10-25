@@ -2,6 +2,7 @@
   "name": "user-message-style",
   "version": "0.1.0",
   "description": "Highlight your own messages in the transcript with a colored rounded border so they stand out in dark themes",
+  "types": "./types/index.d.ts",
   "userConfig": {
     "color": {
       "type": "string",
