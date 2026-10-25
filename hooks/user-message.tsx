@@ -80,7 +80,7 @@ export const register: Register = (on, options) => {
         <Box flexDirection="row" justifyContent="space-between">
           <Text bold color="claude">session status</Text>
           <Box key="refresh-wrap">
-            <Button key="refresh" label="refresh" plain hotkey="r" hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
+            <Button key="refresh" label="refresh" plain hover={{ color: 'claude' }} onPress={() => update($, refreshes, (n) => n + 1)}>
               <Text dimColor> ⟳ refresh </Text>
             </Button>
           </Box>
