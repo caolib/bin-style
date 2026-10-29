@@ -14,6 +14,8 @@ declare module 'claude-code' {
       refreshes: number
       /** The skills list page shown in the status pane. */
       skillPage: number
+      /** Texts submitted mid-turn, still waiting in the prompt queue. */
+      queuedPrompts: string[]
     }
   }
 }

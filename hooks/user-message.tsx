@@ -10,6 +10,12 @@ import type { Register } from 'claude-code'
  * notification) — slash commands arrive unstamped (`unclassified`) and so
  * stay covered.
  *
+ * A prompt typed while a turn is running waits in the engine's queue: its row
+ * draws before it is sent, under an id minted at enqueue, so the row itself
+ * cannot tell the two apart. `prompt.submit` carries that turn's id at Enter —
+ * those texts are remembered (cleared when a turn starts or ends) and their
+ * rows left unbordered until the prompt is actually sent.
+ *
  * Known engine boundary (verified with a render probe): a slash command's
  * final echo row (`> /cmd args`) and the fullscreen sticky row are drawn by
  * the engine itself, never raised through ui.render — no hook sees them.
@@ -23,6 +29,7 @@ type ThemeColor = 'claude' | 'warning' | 'success' | 'error' | 'permission'
 
 const refreshes = atom({ plugin: 'user-message-style', key: 'refreshes' } as const, 0)
 const skillPage = atom({ plugin: 'user-message-style', key: 'skillPage' } as const, 0)
+const queuedPrompts = atom({ plugin: 'user-message-style', key: 'queuedPrompts' } as const, [] as string[])
 const SKILL_PAGE_SIZE = 10
 
 const fmtTokens = (n: number | undefined): string => {
@@ -36,24 +43,68 @@ const bar = (percent: number | undefined, width: number): string => {
   return '█'.repeat(filled) + '░'.repeat(width - filled)
 }
 
+/**
+ * The engine's instance id for its stream-preview prompt rows: `placeholder`,
+ * then `placeholder-1`, `placeholder-2`, … for the next ones. Not a stored
+ * message, so no border of its own.
+ */
+const isQueuedPlaceholder = (requestId: string): boolean =>
+  requestId === 'placeholder' || requestId.startsWith('placeholder-')
+
+/** Origins that are the person typing, not another party's message. */
+const USER_ORIGINS = new Set(['composer', 'bridge', 'sdk', 'unclassified'])
+
+/** A row still waiting in the queue, matched to its submission by text. */
+const isQueued = (text: string, queued: readonly string[]): boolean =>
+  queued.includes(text.trim())
+
 const shortCategory = (name: string): string =>
   name.replace(/\s*\(deferred\)\s*$/i, '').replace(/\s+icons?$/i, '')
 
 export const register: Register = (on, options) => {
   const color = (options.color as ThemeColor | undefined) ?? 'claude'
 
-  on('ui.render', { component: 'UserMessage' }, ($, e, next) => {
-    if (e.props.from !== undefined || e.props.task !== undefined) {
+  on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
+    if (
+      e.props.from !== undefined ||
+      e.props.task !== undefined ||
+      isQueuedPlaceholder(e.requestId)
+    ) {
+      return next(e)
+    }
+
+    const queued = await read($, queuedPrompts)
+    if (isQueued(e.props.text, queued)) {
       return next(e)
     }
 
     const { Box, Text } = $.ui.resolve(e)
 
     return (
-      <Box borderStyle="round" borderColor={color} marginTop={1} paddingX={1}>
+      <Box borderStyle="round" borderColor={color} marginTop={1} paddingX={1} alignSelf="flex-start">
         <Text wrap="wrap">{e.props.text}</Text>
       </Box>
     )
+  })
+
+  // Typed mid-turn, `prompt.submit` runs at Enter with the running turn's id:
+  // the prompt is queued, not sent, until a turn boundary.
+  on('prompt.submit', async ($, e, next) => {
+    if (e.turnId !== undefined && USER_ORIGINS.has(e.origin.kind)) {
+      const text = e.text.trim()
+      await update($, queuedPrompts, (xs) => [...xs, text])
+    }
+    return next(e)
+  })
+
+  // A turn boundary sends what waited (or absorbs it): the queue is empty.
+  on('turn.start', async ($, e, next) => {
+    if (e.agentId === undefined) await update($, queuedPrompts, () => [])
+    return next(e)
+  })
+  on('turn.complete', async ($, e, next) => {
+    if (e.agentId === undefined) await update($, queuedPrompts, () => [])
+    return next(e)
   })
 
   // The status pane: opened by /ustyle, drawn for id "ustyle".

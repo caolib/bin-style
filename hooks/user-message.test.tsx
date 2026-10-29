@@ -71,6 +71,92 @@ for (const surface of ['terminal', 'desktop'] as const) {
       expect(drawn).toMatchObject({ type: 'engine', ref: 0 })
     })
 
+    for (const requestId of ['placeholder', 'placeholder-1', 'placeholder-12']) {
+      test(`passes a queued prompt (\`${requestId}\`) through untouched`, async ($, on) => {
+        on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
+
+        const ui = await $.ui.mount({
+          plugin: 'user-message-style',
+          surface,
+          component: 'UserMessage',
+          requestId,
+          props: {
+            text: 'wait your turn',
+            origin: { kind: 'composer' },
+            isExpanded: true,
+          },
+        })
+
+        const drawn = await ui.drawn()
+        expect(drawn).toMatchObject({ type: 'engine', ref: 0 })
+      })
+    }
+
+    test('leaves a prompt typed mid-turn unbordered until the turn boundary', async ($, on) => {
+      on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
+      on('prompt.submit', ($, e) => ({ text: e.text, origin: e.origin }))
+      on('turn.start', ($, e) => ({ turnId: e.turnId }))
+
+      await $.prompt.submit({
+        text: 'wait your turn',
+        origin: { kind: 'composer' },
+        wait: false,
+        turnId: 'turn-1',
+      })
+
+      const queued = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'wait your turn',
+          origin: { kind: 'composer' },
+          isExpanded: true,
+        },
+      })
+
+      expect(await queued.drawn()).toMatchObject({ type: 'engine', ref: 0 })
+
+      // The boundary sends what waited: the row is the person's now.
+      await $.turn.start({ text: 'wait your turn', turnId: 'turn-2' })
+
+      const sent = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'wait your turn',
+          origin: { kind: 'composer' },
+          isExpanded: true,
+        },
+      })
+
+      expect(await sent.drawn()).toMatchObject({ type: 'Box', props: { borderStyle: 'round' } })
+    })
+
+    test('borders a prompt submitted while idle (no turn running)', async ($, on) => {
+      on('prompt.submit', ($, e) => ({ text: e.text, origin: e.origin }))
+
+      await $.prompt.submit({
+        text: 'sent right away',
+        origin: { kind: 'composer' },
+        wait: false,
+      })
+
+      const ui = await $.ui.mount({
+        plugin: 'user-message-style',
+        surface,
+        component: 'UserMessage',
+        props: {
+          text: 'sent right away',
+          origin: { kind: 'composer' },
+          isExpanded: true,
+        },
+      })
+
+      expect(await ui.drawn()).toMatchObject({ type: 'Box', props: { borderStyle: 'round' } })
+    })
+
     test('passes rows carrying `task` through untouched', async ($, on) => {
       on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
 
