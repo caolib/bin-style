@@ -1,0 +1,24 @@
+{
+  "name": "compact-status",
+  "version": "0.7.1",
+  "description": "输入框上方的单行彩色状态栏：模型、上下文、缓存命中率、目录与 Git",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "theme": {
+      "type": "string",
+      "title": "配色主题",
+      "default": "default",
+      "options": [
+        "default",
+        "onedark",
+        "tokyo-night",
+        "gruvbox",
+        "nord",
+        "catppuccin",
+        "mono",
+        "plain"
+      ],
+      "description": "整套配色，选中即应用；运行 /status-theme 可先预览"
+    }
+  }
+}
