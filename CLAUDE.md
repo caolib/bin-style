@@ -30,4 +30,4 @@ Claude Code 插件集合，经 `.claude-plugin/marketplace.json` 发布。
 
 - 本人消息：UserMessage 无 `from`/`task`
 - 排队未发送的消息用入队时现铸 uuid，渲染 props 区分不出来；靠 `prompt.submit` 的 `turnId` 记录文本
-- 斜杠命令最终回显、全屏 sticky 行由引擎绘制，hook 看不到
+- 斜杠命令最终回显、全屏 sticky 行由引擎绘制，hook 看不到（`CommandOutput` 只是回显下的输出行，不是回显本身）
